@@ -4,7 +4,7 @@ public class Report {
     private int reportId;
     private int userId;
     private String description;
-
+ 
     public Report() {}
 
     public Report(int userId, String description) {
