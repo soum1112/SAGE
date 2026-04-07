@@ -137,6 +137,15 @@ CREATE TABLE SOS_Notification (
     FOREIGN KEY (notification_id) REFERENCES Notification(notification_id)
 );
 
+-- ✅ NEW TABLE (LINK SOS WITH SERVICES)
+CREATE TABLE SOS_Service (
+    sos_id INT,
+    service_id INT,
+    PRIMARY KEY (sos_id, service_id),
+    FOREIGN KEY (sos_id) REFERENCES SOS_Alert(sos_id),
+    FOREIGN KEY (service_id) REFERENCES Emergency_Service(service_id)
+);
+
 CREATE TABLE Service_Police (
     service_id INT,
     station_id INT,
@@ -153,177 +162,130 @@ CREATE TABLE Service_Hospital (
     FOREIGN KEY (hospital_id) REFERENCES Hospital(hospital_id)
 );
 
+-- ================= TRIGGERS =================
 
-delimiter //
-create trigger duplicate_contact
-before insert on Emergency_Contact 
-for each row
-begin
-if exists (
-	select 1 from Emergency_Contact where
-    user_id=NEW.user_id
-    and 
-    phone = new.phone
-)
-then 
-	signal sqlstate '45000'
-    set message_text = 'Duplicate Contact Not Allowed ' ;
-	end if ;
+DELIMITER //
+CREATE TRIGGER duplicate_contact
+BEFORE INSERT ON Emergency_Contact 
+FOR EACH ROW
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM Emergency_Contact 
+        WHERE user_id = NEW.user_id AND phone = NEW.phone
+    )
+    THEN 
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Duplicate Contact Not Allowed';
+    END IF;
+END //
+DELIMITER ;
 
-end //
- delimiter ;
+DELIMITER //
+CREATE TRIGGER after_sos  
+AFTER INSERT ON SOS_Alert  
+FOR EACH ROW  
+BEGIN  
+    INSERT INTO Notification(user_id, message)  
+    VALUES (NEW.user_id, 'SOS Triggered!');
+END //
+DELIMITER ;
 
+DELIMITER //
+CREATE TRIGGER update_risk  
+AFTER INSERT ON SOS_Alert  
+FOR EACH ROW  
+BEGIN  
+    INSERT INTO Risk_Analysis(user_id, risk_level)  
+    VALUES (NEW.user_id, (SELECT getrisklevel(NEW.user_id)));
+END //
+DELIMITER ;
 
-delimiter //
-create trigger after_sos  
-after insert on sos_alert  
-for each row  
-begin  
-    insert into notification(user_id, message)  
-    values (new.user_id, 'SOS Triggered!');  
-end //
-delimiter ;
+-- ================= FUNCTIONS =================
 
+DELIMITER //
+CREATE FUNCTION contactcount(u_id INT)
+RETURNS INT
+DETERMINISTIC 
+BEGIN
+    DECLARE total INT;
+    SELECT COUNT(*) INTO total
+    FROM Emergency_Contact
+    WHERE user_id = u_id;
+    RETURN total;
+END //
+DELIMITER ;
 
-delimiter //
-create trigger update_risk  
-after insert on sos_alert  
-for each row  
-begin  
-    insert into risk_analysis(user_id, risk_level)  
-    values (  
-        new.user_id,  
-        (select getrisklevel(new.user_id))  
-    );  
-end //
-delimiter ;
-
-
-delimiter //
-create function contactcount(u_id int)
-returns int
-deterministic 
-begin
-	declare total int;
-    select count(*) into total
-    from emergency_contact
-    where user_id = u_id;
+DELIMITER //
+CREATE FUNCTION getrisklevel(u_id INT)
+RETURNS VARCHAR(20)
+DETERMINISTIC
+BEGIN
+    DECLARE sos_count INT;
+    DECLARE contact_count INT;
+    DECLARE risk VARCHAR(20);
     
-    return total;
-end //
-delimiter ;
-
-
-delimiter //
-create function getrisklevel(u_id int)
-returns varchar(20)
-deterministic
-begin
-	declare sos_count int;
-    declare contact_count int;
-    declare risk varchar(50);
+    SELECT COUNT(*) INTO sos_count FROM SOS_Alert WHERE user_id = u_id;
+    SET contact_count = contactcount(u_id);
     
-    select count(*) into sos_count
-    from sos_alert
-    where user_id = u_id;
-    
-    set contact_count = contactcount(u_id);
-    
-    if contact_count = 0 then
-		set risk = "HIGH";
-	elseif sos_count > 5 then
-        set risk = 'HIGH';
-    elseif sos_count between 3 and 5 then
-        set risk = 'MEDIUM';
-    else
-        set risk = 'LOW';
-    end if;
-    return risk;
-end //
-delimiter ;
+    IF contact_count = 0 THEN
+        SET risk = 'HIGH';
+    ELSEIF sos_count > 5 THEN
+        SET risk = 'HIGH';
+    ELSEIF sos_count BETWEEN 3 AND 5 THEN
+        SET risk = 'MEDIUM';
+    ELSE
+        SET risk = 'LOW';
+    END IF;
 
+    RETURN risk;
+END //
+DELIMITER ;
 
-delimiter //
-create procedure createsos (in u_id int, in sos_status varchar(20))
-begin 
-	if not exists (select 1 from `user` where user_id = u_id) then
-		signal sqlstate '45000'
-        set message_text = "User does not exist";
-	else
-		insert into sos_alert(user_id, status) values (u_id, sos_status);
-	end if;
-end //
-delimiter ;
+-- ================= PROCEDURES =================
 
+DELIMITER //
+CREATE PROCEDURE createsos(IN u_id INT, IN sos_status VARCHAR(20))
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM `User` WHERE user_id = u_id) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'User does not exist';
+    ELSE
+        INSERT INTO SOS_Alert(user_id, status) VALUES (u_id, sos_status);
+    END IF;
+END //
+DELIMITER ;
 
-delimiter //
-create procedure SaveLocation(
-in lat decimal(9,6),
-in lng decimal(9,6),
-in addr varchar(100)
+DELIMITER //
+CREATE PROCEDURE SaveLocation(
+    IN lat DECIMAL(9,6),
+    IN lng DECIMAL(9,6),
+    IN addr VARCHAR(100)
 )
-begin
-insert into Location(latitude, longitude, address)
-values (lat, lng, addr);
-end//
-delimiter ;
+BEGIN
+    INSERT INTO Location(latitude, longitude, address)
+    VALUES (lat, lng, addr);
+END //
+DELIMITER ;
 
-delimiter //
-create procedure AddReport(
-in u_id int, 
-in r_type varchar(50),
-in descr varchar(500)
+DELIMITER //
+CREATE PROCEDURE AddReport(
+    IN u_id INT, 
+    IN r_type VARCHAR(50),
+    IN descr VARCHAR(500)
 )
-begin
-insert into Incident_Report(user_id, type, description)
-values(u_id, r_type, descr);
-end //
-delimiter ;
+BEGIN
+    INSERT INTO Incident_Report(user_id, type, description)
+    VALUES(u_id, r_type, descr);
+END //
+DELIMITER ;
 
-delimiter //
-create procedure AddNotification(
-in u_id int,
-in msg varchar(100)
+DELIMITER //
+CREATE PROCEDURE AddNotification(
+    IN u_id INT,
+    IN msg VARCHAR(100)
 )
-begin 
-insert into Notification(user_id, message)
-values(u_id, msg);
-end //
-delimiter ;
-
-delimiter //
-create procedure SaveLocation(
-in lat decimal(9,6),
-in lng decimal(9,6),
-in addr varchar(100)
-)
-begin
-insert into Location(latitude, longitude, address)
-values (lat, lng, addr);
-end//
-delimiter ;
-
-
-delimiter //
-create procedure AddReport(
-in u_id int, 
-in r_type varchar(50),
-in descr varchar(500)
-)
-begin
-insert into Incident_Report(user_id, type, description)
-values(u_id, r_type, descr);
-end //
-delimiter ;
-
-
-delimiter //
-create procedure AddNotification(
-in u_id int,
-in msg varchar(100)
-)
-begin 
-insert into Notification(user_id, message)
-values(u_id, msg);
-end //
-delimiter ;
+BEGIN 
+    INSERT INTO Notification(user_id, message)
+    VALUES(u_id, msg);
+END //
+DELIMITER ;
