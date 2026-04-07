@@ -1,291 +1,203 @@
+DROP DATABASE IF EXISTS sage;
 CREATE DATABASE sage;
 USE sage;
 
-CREATE TABLE `User`(
-    user_id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(50) NOT NULL,
-    phone VARCHAR(20) NOT NULL,
-    email VARCHAR(50),
-    password VARCHAR(255)
+CREATE TABLE `User` (
+    user_id    INT          PRIMARY KEY AUTO_INCREMENT,
+    name       VARCHAR(50)  NOT NULL,
+    phone      VARCHAR(20)  NOT NULL UNIQUE,
+    email      VARCHAR(50)  UNIQUE,
+    password   VARCHAR(255) NOT NULL,      
+    created_at DATETIME     DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE Location (
-    location_id INT PRIMARY KEY AUTO_INCREMENT,
-    latitude DECIMAL(9,6),
-    longitude DECIMAL(9,6),
-    address VARCHAR(100)
+    location_id INT          PRIMARY KEY AUTO_INCREMENT,
+    latitude    DECIMAL(9,6) NOT NULL,
+    longitude   DECIMAL(9,6) NOT NULL,
+    address     VARCHAR(100),
+    recorded_at DATETIME     DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE SOS_Alert (
-    sos_id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT,
-    status VARCHAR(20),
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES `User`(user_id)
-);
-
-CREATE TABLE Emergency_Contact (
-    contact_id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT,
-    name VARCHAR(50),
-    phone VARCHAR(20),
-    relation VARCHAR(20),
-    FOREIGN KEY (user_id) REFERENCES `User`(user_id)
-);
-
-CREATE TABLE Police_Station (
-    station_id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(50),
-    area VARCHAR(50),
-    contact VARCHAR(20)
-);
-
-CREATE TABLE Hospital (
-    hospital_id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(50),
-    contact VARCHAR(20)
-);
-
-CREATE TABLE Emergency_Service (
-    service_id INT PRIMARY KEY AUTO_INCREMENT,
-    type VARCHAR(20),
-    contact VARCHAR(20)
-);
-
-CREATE TABLE Safety_Product (
-    product_id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(50),
-    category VARCHAR(50),
-    price INT,
-    description VARCHAR(200)
-);
-
-CREATE TABLE Safety_Tips (
-    tip_id INT PRIMARY KEY AUTO_INCREMENT,
-    title VARCHAR(50),
-    category VARCHAR(50),
-    description VARCHAR(200)
-);
-
-CREATE TABLE Safe_Zone (
-    zone_id INT PRIMARY KEY AUTO_INCREMENT,
-    location_id INT,
-    type VARCHAR(50),
-    rating INT,
+CREATE TABLE User_Location (
+    user_id     INT NOT NULL,
+    location_id INT NOT NULL,
+    shared_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, location_id),
+    FOREIGN KEY (user_id)     REFERENCES `User`(user_id),
     FOREIGN KEY (location_id) REFERENCES Location(location_id)
 );
 
-CREATE TABLE Incident_Report (
-    report_id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT,
-    type VARCHAR(50),
-    description VARCHAR(500),
+CREATE TABLE SOS_Alert (
+    sos_id      INT         PRIMARY KEY AUTO_INCREMENT,
+    user_id     INT         NOT NULL,
+    location_id INT,
+    status      VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    timestamp   DATETIME    DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id)     REFERENCES `User`(user_id),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id)
+);
+
+CREATE TABLE Emergency_Contact (
+    contact_id INT         PRIMARY KEY AUTO_INCREMENT,
+    user_id    INT         NOT NULL,
+    name       VARCHAR(50) NOT NULL,
+    phone      VARCHAR(20) NOT NULL,
+    relation   VARCHAR(30),
     FOREIGN KEY (user_id) REFERENCES `User`(user_id)
 );
 
+CREATE TABLE Emergency_Service (
+    service_id   INT          PRIMARY KEY AUTO_INCREMENT,
+    type         VARCHAR(20)  NOT NULL CHECK (type IN ('AMBULANCE','POLICE','NGO','OTHER')),
+    name         VARCHAR(100) NOT NULL,
+    contact      VARCHAR(20),
+    availability VARCHAR(50)  DEFAULT 'AVAILABLE',
+    location_id  INT,
+    FOREIGN KEY (location_id) REFERENCES Location(location_id)
+);
+CREATE TABLE Ambulance (
+    service_id     INT PRIMARY KEY,
+    vehicle_number VARCHAR(20),
+    hospital_name  VARCHAR(100),
+    FOREIGN KEY (service_id) REFERENCES Emergency_Service(service_id)
+);
+
+CREATE TABLE Police_Station (
+    service_id   INT PRIMARY KEY,
+    station_name VARCHAR(100) NOT NULL,
+    area         VARCHAR(100),
+    FOREIGN KEY (service_id) REFERENCES Emergency_Service(service_id)
+);
+
+CREATE TABLE NGO (
+    service_id INT PRIMARY KEY,
+    ngo_name   VARCHAR(100) NOT NULL,
+    focus_area VARCHAR(100),
+    website    VARCHAR(200),
+    FOREIGN KEY (service_id) REFERENCES Emergency_Service(service_id)
+);
+
+CREATE TABLE Safety_Product (
+    product_id  INT           PRIMARY KEY AUTO_INCREMENT,
+    name        VARCHAR(100)  NOT NULL,
+    category    VARCHAR(50),
+    price       DECIMAL(10,2),
+    description VARCHAR(500),
+    link        VARCHAR(255)
+);
+
+CREATE TABLE Safety_Tips (
+    tip_id      INT          PRIMARY KEY AUTO_INCREMENT,
+    title       VARCHAR(100) NOT NULL,
+    category    VARCHAR(50),
+    description VARCHAR(500),
+    created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Safe_Zone (
+    zone_id     INT         PRIMARY KEY AUTO_INCREMENT,
+    location_id INT         NOT NULL,
+    name        VARCHAR(100),
+    type        VARCHAR(50),
+    description VARCHAR(300),
+    rating      INT         CHECK (rating BETWEEN 1 AND 5),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id)
+);
+
+
+CREATE TABLE Incident_Report (
+    report_id   INT          PRIMARY KEY AUTO_INCREMENT,
+    user_id     INT          NOT NULL,
+    location_id INT,
+    type        VARCHAR(50),
+    description VARCHAR(500),
+    evidence    VARCHAR(255),
+    reported_at DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id)     REFERENCES `User`(user_id),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id)
+);
+
+
 CREATE TABLE Notification (
-    notification_id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT,
-    message VARCHAR(100),
+    notification_id INT          PRIMARY KEY AUTO_INCREMENT,
+    user_id         INT          NOT NULL,
+    message         VARCHAR(255) NOT NULL,
+    n_type          VARCHAR(30)  DEFAULT 'GENERAL',  
+    is_read         TINYINT(1)   DEFAULT 0,
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES `User`(user_id)
 );
 
 CREATE TABLE Feedback (
-    feedback_id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT,
-    rating INT,
-    comments VARCHAR(100),
+    feedback_id  INT         PRIMARY KEY AUTO_INCREMENT,
+    user_id      INT         NOT NULL,
+    rating       INT         CHECK (rating BETWEEN 1 AND 5),
+    comments     VARCHAR(500),
+    submitted_at DATETIME    DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES `User`(user_id)
 );
 
 CREATE TABLE Risk_Analysis (
-    analysis_id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT,
-    risk_level VARCHAR(20),
+    analysis_id INT         PRIMARY KEY AUTO_INCREMENT,
+    user_id     INT         NOT NULL,
+    risk_level  VARCHAR(20) NOT NULL,
+    analysed_at DATETIME    DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES `User`(user_id)
 );
 
+
 CREATE TABLE Evidence (
-    evidence_id INT PRIMARY KEY AUTO_INCREMENT,
-    sos_id INT,
-    type VARCHAR(20),
-    file_path VARCHAR(100),
+    evidence_id INT          PRIMARY KEY AUTO_INCREMENT,
+    sos_id      INT          NOT NULL,
+    file_type   VARCHAR(20)  NOT NULL,   
+    file_path   VARCHAR(255) NOT NULL,
+    uploaded_at DATETIME     DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sos_id) REFERENCES SOS_Alert(sos_id)
 );
 
 CREATE TABLE User_Product (
-    user_id INT,
+    user_id    INT,
     product_id INT,
+    viewed_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, product_id),
-    FOREIGN KEY (user_id) REFERENCES `User`(user_id),
+    FOREIGN KEY (user_id)    REFERENCES `User`(user_id),
     FOREIGN KEY (product_id) REFERENCES Safety_Product(product_id)
 );
 
+
 CREATE TABLE User_Tips (
-    user_id INT,
-    tip_id INT,
+    user_id   INT,
+    tip_id    INT,
+    viewed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, tip_id),
     FOREIGN KEY (user_id) REFERENCES `User`(user_id),
-    FOREIGN KEY (tip_id) REFERENCES Safety_Tips(tip_id)
+    FOREIGN KEY (tip_id)  REFERENCES Safety_Tips(tip_id)
 );
 
 CREATE TABLE SOS_Notification (
-    sos_id INT,
+    sos_id          INT,
     notification_id INT,
     PRIMARY KEY (sos_id, notification_id),
-    FOREIGN KEY (sos_id) REFERENCES SOS_Alert(sos_id),
+    FOREIGN KEY (sos_id)          REFERENCES SOS_Alert(sos_id),
     FOREIGN KEY (notification_id) REFERENCES Notification(notification_id)
 );
 
--- ✅ NEW TABLE (LINK SOS WITH SERVICES)
+
 CREATE TABLE SOS_Service (
-    sos_id INT,
-    service_id INT,
+    sos_id       INT,
+    service_id   INT,
+    requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (sos_id, service_id),
-    FOREIGN KEY (sos_id) REFERENCES SOS_Alert(sos_id),
+    FOREIGN KEY (sos_id)     REFERENCES SOS_Alert(sos_id),
     FOREIGN KEY (service_id) REFERENCES Emergency_Service(service_id)
 );
 
-CREATE TABLE Service_Police (
-    service_id INT,
-    station_id INT,
-    PRIMARY KEY (service_id, station_id),
-    FOREIGN KEY (service_id) REFERENCES Emergency_Service(service_id),
-    FOREIGN KEY (station_id) REFERENCES Police_Station(station_id)
+
+CREATE TABLE Contact_Notification (
+    contact_id      INT,
+    notification_id INT,
+    PRIMARY KEY (contact_id, notification_id),
+    FOREIGN KEY (contact_id)      REFERENCES Emergency_Contact(contact_id),
+    FOREIGN KEY (notification_id) REFERENCES Notification(notification_id)
 );
-
-CREATE TABLE Service_Hospital (
-    service_id INT,
-    hospital_id INT,
-    PRIMARY KEY (service_id, hospital_id),
-    FOREIGN KEY (service_id) REFERENCES Emergency_Service(service_id),
-    FOREIGN KEY (hospital_id) REFERENCES Hospital(hospital_id)
-);
-
--- ================= TRIGGERS =================
-
-DELIMITER //
-CREATE TRIGGER duplicate_contact
-BEFORE INSERT ON Emergency_Contact 
-FOR EACH ROW
-BEGIN
-    IF EXISTS (
-        SELECT 1 FROM Emergency_Contact 
-        WHERE user_id = NEW.user_id AND phone = NEW.phone
-    )
-    THEN 
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Duplicate Contact Not Allowed';
-    END IF;
-END //
-DELIMITER ;
-
-DELIMITER //
-CREATE TRIGGER after_sos  
-AFTER INSERT ON SOS_Alert  
-FOR EACH ROW  
-BEGIN  
-    INSERT INTO Notification(user_id, message)  
-    VALUES (NEW.user_id, 'SOS Triggered!');
-END //
-DELIMITER ;
-
-DELIMITER //
-CREATE TRIGGER update_risk  
-AFTER INSERT ON SOS_Alert  
-FOR EACH ROW  
-BEGIN  
-    INSERT INTO Risk_Analysis(user_id, risk_level)  
-    VALUES (NEW.user_id, (SELECT getrisklevel(NEW.user_id)));
-END //
-DELIMITER ;
-
--- ================= FUNCTIONS =================
-
-DELIMITER //
-CREATE FUNCTION contactcount(u_id INT)
-RETURNS INT
-DETERMINISTIC 
-BEGIN
-    DECLARE total INT;
-    SELECT COUNT(*) INTO total
-    FROM Emergency_Contact
-    WHERE user_id = u_id;
-    RETURN total;
-END //
-DELIMITER ;
-
-DELIMITER //
-CREATE FUNCTION getrisklevel(u_id INT)
-RETURNS VARCHAR(20)
-DETERMINISTIC
-BEGIN
-    DECLARE sos_count INT;
-    DECLARE contact_count INT;
-    DECLARE risk VARCHAR(20);
-    
-    SELECT COUNT(*) INTO sos_count FROM SOS_Alert WHERE user_id = u_id;
-    SET contact_count = contactcount(u_id);
-    
-    IF contact_count = 0 THEN
-        SET risk = 'HIGH';
-    ELSEIF sos_count > 5 THEN
-        SET risk = 'HIGH';
-    ELSEIF sos_count BETWEEN 3 AND 5 THEN
-        SET risk = 'MEDIUM';
-    ELSE
-        SET risk = 'LOW';
-    END IF;
-
-    RETURN risk;
-END //
-DELIMITER ;
-
--- ================= PROCEDURES =================
-
-DELIMITER //
-CREATE PROCEDURE createsos(IN u_id INT, IN sos_status VARCHAR(20))
-BEGIN 
-    IF NOT EXISTS (SELECT 1 FROM `User` WHERE user_id = u_id) THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'User does not exist';
-    ELSE
-        INSERT INTO SOS_Alert(user_id, status) VALUES (u_id, sos_status);
-    END IF;
-END //
-DELIMITER ;
-
-DELIMITER //
-CREATE PROCEDURE SaveLocation(
-    IN lat DECIMAL(9,6),
-    IN lng DECIMAL(9,6),
-    IN addr VARCHAR(100)
-)
-BEGIN
-    INSERT INTO Location(latitude, longitude, address)
-    VALUES (lat, lng, addr);
-END //
-DELIMITER ;
-
-DELIMITER //
-CREATE PROCEDURE AddReport(
-    IN u_id INT, 
-    IN r_type VARCHAR(50),
-    IN descr VARCHAR(500)
-)
-BEGIN
-    INSERT INTO Incident_Report(user_id, type, description)
-    VALUES(u_id, r_type, descr);
-END //
-DELIMITER ;
-
-DELIMITER //
-CREATE PROCEDURE AddNotification(
-    IN u_id INT,
-    IN msg VARCHAR(100)
-)
-BEGIN 
-    INSERT INTO Notification(user_id, message)
-    VALUES(u_id, msg);
-END //
-DELIMITER ;
