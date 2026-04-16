@@ -1,0 +1,38 @@
+// Source code is decompiled from a .class file using FernFlower decompiler (from Intellij IDEA).
+package services;
+
+public class PoliceStation extends EmergencyServiceBase {
+   private String stationName;
+   private String area;
+
+   public PoliceStation(int var1, String var2, String var3, String var4, String var5, String var6) {
+      super(var1, var2, var3, var4, "POLICE");
+      this.stationName = var5;
+      this.area = var6;
+   }
+
+   public String getStationName() {
+      return this.stationName;
+   }
+
+   public String getArea() {
+      return this.area;
+   }
+
+   public void displayInfo() {
+      System.out.println(" +--[ POLICE STATION ]----------------------------------+");
+      System.out.printf(" | Name    : %-40s|%n", this.name);
+      System.out.printf(" | Station : %-40s|%n", this.stationName);
+      System.out.printf(" | Area    : %-40s|%n", this.area);
+      System.out.printf(" | Contact : %-40s|%n", this.contact);
+      System.out.printf(" | Status  : %-40s|%n", this.availability);
+      System.out.println(" +------------------------------------------------------+");
+   }
+
+   public void sendAlert(int var1, String var2) {
+      System.out.println(" >> POLICE ALERT sent to " + this.stationName);
+      System.out.println("    User #" + var1 + " needs help at: " + var2);
+      System.out.println("    Dispatch to area: " + this.area);
+      System.out.println("    Call: " + this.contact);
+   }
+}
