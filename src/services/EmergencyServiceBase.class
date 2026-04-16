@@ -1,0 +1,53 @@
+// Source code is decompiled from a .class file using FernFlower decompiler (from Intellij IDEA).
+package services;
+
+import interfaces.Alertable;
+import interfaces.Displayable;
+
+public abstract class EmergencyServiceBase implements Alertable, Displayable {
+   protected int serviceId;
+   protected String name;
+   protected String contact;
+   protected String availability;
+   protected String type;
+
+   public EmergencyServiceBase(int var1, String var2, String var3, String var4, String var5) {
+      this.serviceId = var1;
+      this.name = var2;
+      this.contact = var3;
+      this.availability = var4;
+      this.type = var5;
+   }
+
+   public int getServiceId() {
+      return this.serviceId;
+   }
+
+   public String getName() {
+      return this.name;
+   }
+
+   public String getContact() {
+      return this.contact;
+   }
+
+   public String getAvailability() {
+      return this.availability;
+   }
+
+   public String getType() {
+      return this.type;
+   }
+
+   public abstract void displayInfo();
+
+   public abstract void sendAlert(int var1, String var2);
+
+   public String getAlertMessage() {
+      return "[" + this.type + "] " + this.name + " has been notified. Contact: " + this.contact;
+   }
+
+   public String toString() {
+      return String.format("[%d] %-25s | %-12s | Phone: %-15s | %s", this.serviceId, this.name, this.type, this.contact, this.availability);
+   }
+}
