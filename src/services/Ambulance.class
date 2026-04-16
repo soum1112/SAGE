@@ -1,0 +1,38 @@
+// Source code is decompiled from a .class file using FernFlower decompiler (from Intellij IDEA).
+package services;
+
+public class Ambulance extends EmergencyServiceBase {
+   private String vehicleNumber;
+   private String hospitalName;
+
+   public Ambulance(int var1, String var2, String var3, String var4, String var5, String var6) {
+      super(var1, var2, var3, var4, "AMBULANCE");
+      this.vehicleNumber = var5;
+      this.hospitalName = var6;
+   }
+
+   public String getVehicleNumber() {
+      return this.vehicleNumber;
+   }
+
+   public String getHospitalName() {
+      return this.hospitalName;
+   }
+
+   public void displayInfo() {
+      System.out.println(" +--[ AMBULANCE ]---------------------------------------+");
+      System.out.printf(" | Service  : %-39s|%n", this.name);
+      System.out.printf(" | Vehicle  : %-39s|%n", this.vehicleNumber);
+      System.out.printf(" | Hospital : %-39s|%n", this.hospitalName);
+      System.out.printf(" | Contact  : %-39s|%n", this.contact);
+      System.out.printf(" | Status   : %-39s|%n", this.availability);
+      System.out.println(" +------------------------------------------------------+");
+   }
+
+   public void sendAlert(int var1, String var2) {
+      System.out.println(" >> AMBULANCE ALERT dispatched from " + this.hospitalName);
+      System.out.println("    Vehicle: " + this.vehicleNumber + " heading to: " + var2);
+      System.out.println("    User #" + var1 + " requires medical assistance.");
+      System.out.println("    Contact: " + this.contact);
+   }
+}
