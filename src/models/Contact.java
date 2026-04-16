@@ -15,7 +15,7 @@ public class Contact {
         this.phone = phone;
         this.relation = relation;
     }
-
+    
     public int getContactId() { return contactId; }
     public int getUserId() { return userId; }
     public String getName() { return name; }
