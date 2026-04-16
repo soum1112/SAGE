@@ -1,0 +1,44 @@
+// Source code is decompiled from a .class file using FernFlower decompiler (from Intellij IDEA).
+package services;
+
+public class NGO extends EmergencyServiceBase {
+   private String ngoName;
+   private String focusArea;
+   private String website;
+
+   public NGO(int var1, String var2, String var3, String var4, String var5, String var6, String var7) {
+      super(var1, var2, var3, var4, "NGO");
+      this.ngoName = var5;
+      this.focusArea = var6;
+      this.website = var7;
+   }
+
+   public String getNgoName() {
+      return this.ngoName;
+   }
+
+   public String getFocusArea() {
+      return this.focusArea;
+   }
+
+   public String getWebsite() {
+      return this.website;
+   }
+
+   public void displayInfo() {
+      System.out.println(" +--[ NGO / SUPPORT ORG ]-------------------------------+");
+      System.out.printf(" | Org Name : %-38s|%n", this.ngoName);
+      System.out.printf(" | Focus    : %-38s|%n", this.focusArea);
+      System.out.printf(" | Contact  : %-38s|%n", this.contact);
+      System.out.printf(" | Website  : %-38s|%n", this.website != null ? this.website : "N/A");
+      System.out.printf(" | Status   : %-38s|%n", this.availability);
+      System.out.println(" +------------------------------------------------------+");
+   }
+
+   public void sendAlert(int var1, String var2) {
+      System.out.println(" >> NGO SUPPORT ALERT sent to " + this.ngoName);
+      System.out.println("    Focus area: " + this.focusArea);
+      System.out.println("    User #" + var1 + " at: " + var2 + " needs support.");
+      System.out.println("    Contact: " + this.contact + " | Web: " + this.website);
+   }
+}
