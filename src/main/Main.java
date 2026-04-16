@@ -222,6 +222,7 @@ public class Main {
         } else {
             System.out.println("  No " + type + " service available.");
         }
+        
     }
 
     static void tipsAndProducts() {
